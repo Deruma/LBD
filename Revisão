@@ -1,0 +1,141 @@
+create table NOTAS (
+ cd_aluno number not NULL,
+ ds_curso varchar (20) not NULL,
+ ds_disciplina varchar (20) not NULL,
+ P1 number (4,2),
+ P2 number (4,2),
+ P3 number (4,2),
+ MP number (4,2),
+ EX number (4,2),
+ MF number (4,2),
+ status varchar (10),
+ primary key (cd_aluno));
+
+drop table NOTAS;
+
+select * from NOTAS;
+
+create or replace function mp(x real, y real, z real)
+return number is
+BEGIN
+ return ((x*3) + (y*3) + (z*4))/10;
+END;
+/
+
+create or replace function mf(x real, y real)
+return number is
+BEGIN
+ return (x + y)/2;
+END;
+/
+
+create or replace function msmp(x real)
+return varchar is
+BEGIN
+ if x>= 7 then
+  return 'Aprovado';
+ else 
+  return 'Exame';
+ end if;
+END;
+/
+
+
+create or replace function msmf(x real)
+return varchar is
+BEGIN
+ if x>= 5 then
+  return 'Aprovado com Exame';
+ else 
+  return 'Reprovado';
+ end if;
+END;
+/
+
+create or replace procedure insere_notas (codigo number, curso varchar, disciplina varchar, x real, y real, z real) is
+BEGIN
+ insert into NOTAS (cd_aluno, ds_curso, ds_disciplina, P1,P2,P3)
+ values (codigo, curso, disciplina, x, y, z);
+commit;
+END;
+/
+
+
+BEGIN
+ insere_notas (1, 'CC', 'LBD', 7,7,7);
+END;
+/
+
+
+BEGIN
+ insere_notas (2, 'CC', 'LBD', 0,2,7);
+END;
+/
+
+
+BEGIN
+ insere_notas (3, 'CC', 'LBD', 1,1,2);
+END;
+/
+
+select * from NOTAS
+
+create or replace procedure calcula_mp is
+BEGIN
+ update notas set MP = (MP(P1,P2,P3));
+ update notas set status = msmp (MP);
+commit;
+END;
+/
+
+
+BEGIN
+ calcula_mp;
+END;
+/
+
+select * from NOTAS
+
+create or replace procedure insere_exame(pcod number, pex real) is
+vMP real;
+BEGIN
+ select MP into vMP from NOTAS where codigo = pcod;
+ if vMP >= 7 then
+  raise_application_error(-20001, 'O aluno não está de exame');
+ else
+  update NOTAS set EX = pex where codigo = pcod;
+ end if;
+commit;
+END;
+/
+
+BEGIN
+ insere_exame(1,5);
+END;
+/
+
+BEGIN
+ insere_exame(2,5);
+END;
+/
+
+BEGIN
+ insere_exame(3,5);
+END;
+/
+
+create or replace procedure calculca_mf is
+BEGIN
+ update NOTAS set MF = (MF(MP, EX));
+ update NOTAS set MF = MP where MP >= 7;
+ update NOTAS set status = msmf (MF);
+commit;
+END;
+/
+
+BEGIN
+ calcula_mf;
+END;
+/
+
+select * from NOTAS
